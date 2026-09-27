@@ -9,7 +9,6 @@ package runtime
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/highcumontoa/versioned-sdk-toolchain-go/sdkerrors"
 	"github.com/highcumontoa/versioned-sdk-toolchain-go/serde"
@@ -145,7 +144,7 @@ func Normalize(op string, err error) error {
 		return nil
 	}
 	return sdkerrors.New(sdkerrors.KindRuntime,
-		fmt.Sprintf("runtime call failed: %v", err)).WithOp(op).Wrap(err)
+		"runtime call to the underlying backend failed").WithOp(op).Wrap(err)
 }
 
 // NormalizeStatus maps a transport status (with optional cause) to the

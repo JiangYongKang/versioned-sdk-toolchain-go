@@ -78,6 +78,9 @@ func (TextKVCodec) Unmarshal(data []byte, v any) error {
 }
 
 func flatMap(v any) (map[string]any, error) {
+	if pm, ok := v.(*map[string]any); ok {
+		v = *pm
+	}
 	m, ok := v.(map[string]any)
 	if !ok {
 		return nil, sdkerrors.New(sdkerrors.KindInput,

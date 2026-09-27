@@ -26,8 +26,6 @@ func TestConcurrentSameRoot(t *testing.T) {
 	var wg sync.WaitGroup
 	errs := make(chan error, n)
 	reusedCount := make(chan bool, n)
-	var wg2 sync.WaitGroup
-	_ = wg2
 	for i := 0; i < n; i++ {
 		wg.Add(1)
 		go func() {

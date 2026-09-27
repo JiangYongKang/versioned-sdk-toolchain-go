@@ -115,7 +115,7 @@ package runtime
 import (
 	"fmt"
 
-	"` + importPlaceholder() + `/sdkerrors"
+	"__MODULE__/sdkerrors"
 )
 
 // StatusCode is the coarse backend status class used for error mapping.
@@ -169,7 +169,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"` + importPlaceholder() + `/sdkerrors"
+	"__MODULE__/sdkerrors"
 )
 
 // PreparedRequest is the serialized request handed to a transport.
@@ -298,10 +298,6 @@ func (c *Client) Invoke(ctx context.Context, req *Request, out any) (*Response, 
 	}
 	return &Response{Raw: raw.Body}, nil
 }
-
-type errNilResponse struct{}
-
-func (errNilResponse) Error() string { return "transport returned nil response without error" }
 `
 }
 
@@ -365,6 +361,3 @@ func (e *vendorError) Error() string {
 }
 `
 }
-
-// importPlaceholder is replaced by the module path in the emitted source.
-func importPlaceholder() string { return "__MODULE__" }

@@ -1,0 +1,9 @@
+# Local generation output
+.output/
+.sdkgen/
+.staging-*
+
+# Go test/coverage artifacts
+*.test
+*.out
+coverage.txt

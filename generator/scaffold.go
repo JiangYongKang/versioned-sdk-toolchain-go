@@ -128,9 +128,9 @@ const (
 	StatusUnavailable StatusCode = 503
 )
 
-// Normalize maps a backend status plus transport error onto the stable
-// taxonomy. Foreign error text is preserved only as a wrapped cause.
-func Normalize(op string, status StatusCode, cause error) error {
+// NormalizeStatus maps a backend status plus transport error onto the
+// stable taxonomy. Foreign error text is preserved only as a cause.
+func NormalizeStatus(op string, status StatusCode, cause error) error {
 	switch {
 	case status == StatusBadRequest:
 		return sdkerrors.New(sdkerrors.KindInput,
@@ -147,6 +147,16 @@ func Normalize(op string, status StatusCode, cause error) error {
 	default:
 		return nil
 	}
+}
+
+// NormalizeTransport maps a transport-level error to KindRuntime, keeping
+// foreign error text out of the stable reason.
+func NormalizeTransport(op string, cause error) error {
+	if cause == nil {
+		return nil
+	}
+	return sdkerrors.New(sdkerrors.KindRuntime,
+		"runtime call to the underlying backend failed").WithOp(op).Wrap(cause)
 }
 `
 }
@@ -272,12 +282,13 @@ func (c *Client) Invoke(ctx context.Context, req *Request, out any) (*Response, 
 		Operation: req.Operation, Body: body,
 	})
 	if err != nil {
-		return nil, Normalize(op, 0, err)
+		return nil, NormalizeTransport(op, err)
 	}
 	if raw == nil {
-		return nil, Normalize(op, 0, errNilResponse{})
+		return nil, sdkerrors.New(sdkerrors.KindRuntime,
+			"transport returned a nil response without an error").WithOp(op)
 	}
-	if nerr := Normalize(op, raw.Status, nil); nerr != nil {
+	if nerr := NormalizeStatus(op, raw.Status, nil); nerr != nil {
 		return nil, nerr
 	}
 	if out != nil {
@@ -303,7 +314,7 @@ import (
 )
 
 // HandlerFunc is one local operation implementation.
-type HandlerFunc func(ctx context.Context, body []byte) (*RawResponse, error)
+type HandlerFunc func(ctx context.Context, req *PreparedRequest) (*RawResponse, error)
 
 // LocalTransport is an in-process transport for offline verification.
 type LocalTransport struct {
@@ -326,13 +337,31 @@ func (t *LocalTransport) Call(ctx context.Context, req *PreparedRequest) (*RawRe
 	if !ok {
 		return nil, &routeError{service: req.Service, operation: req.Operation}
 	}
-	return h(ctx, req.Body)
+	return h(ctx, req)
 }
 
 type routeError struct{ service, operation string }
 
 func (e *routeError) Error() string {
 	return "no local handler registered for " + e.service + "." + e.operation
+}
+
+// FailingTransport always fails with a foreign error type, proving
+// vendor errors are normalized before reaching callers.
+type FailingTransport struct{ Label string }
+
+// NewFailingTransport builds a FailingTransport.
+func NewFailingTransport(label string) *FailingTransport { return &FailingTransport{Label: label} }
+
+// Call always returns a vendor-specific error.
+func (t *FailingTransport) Call(_ context.Context, _ *PreparedRequest) (*RawResponse, error) {
+	return nil, &vendorError{label: t.Label}
+}
+
+type vendorError struct{ label string }
+
+func (e *vendorError) Error() string {
+	return "vendor-sdk<" + e.label + ">: exploded in native layer"
 }
 `
 }

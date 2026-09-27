@@ -1,0 +1,66 @@
+{
+  "name": "billing",
+  "version": "v1.0.0",
+  "codec": "json",
+  "doc": "Billing service baseline",
+  "types": [
+    {
+      "name": "Currency",
+      "doc": "Supported currencies",
+      "type": { "kind": "enum", "values": ["USD", "EUR"] }
+    },
+    {
+      "name": "Money",
+      "type": {
+        "kind": "object",
+        "fields": [
+          { "name": "amount_minor", "type": { "kind": "integer" } },
+          { "name": "currency", "type": { "kind": "ref", "ref": "Currency" } }
+        ]
+      }
+    }
+  ],
+  "operations": [
+    {
+      "name": "create_invoice",
+      "doc": "Create an invoice",
+      "input": {
+        "kind": "object",
+        "fields": [
+          { "name": "customer_id", "type": { "kind": "string" } },
+          { "name": "total", "type": { "kind": "ref", "ref": "Money" } }
+        ]
+      },
+      "output": {
+        "kind": "object",
+        "fields": [
+          { "name": "invoice_id", "type": { "kind": "string" } },
+          {
+            "name": "status",
+            "type": { "kind": "enum", "values": ["open", "paid"] }
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_invoice",
+      "input": {
+        "kind": "object",
+        "fields": [
+          { "name": "invoice_id", "type": { "kind": "string" } }
+        ]
+      },
+      "output": {
+        "kind": "object",
+        "fields": [
+          { "name": "invoice_id", "type": { "kind": "string" } },
+          { "name": "total", "type": { "kind": "ref", "ref": "Money" } },
+          {
+            "name": "status",
+            "type": { "kind": "enum", "values": ["open", "paid"] }
+          }
+        ]
+      }
+    }
+  ]
+}

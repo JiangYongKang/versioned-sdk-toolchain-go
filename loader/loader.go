@@ -64,11 +64,11 @@ func (l *Loader) LoadDir(ctx context.Context, dir string) (*schema.Document, err
 	var files []fileHint
 	for _, e := range entries {
 		if e.IsDir() {
-			subFiles, err := l.readServiceDir(filepath.Join(dir, e.Name()), e.Name())
+			sub, err := l.collectFiles(filepath.Join(dir, e.Name()), e.Name())
 			if err != nil {
 				return nil, err
 			}
-			files = append(files, subFiles...)
+			files = append(files, sub...)
 			continue
 		}
 		if l.accept(e.Name()) {
@@ -108,18 +108,27 @@ func (l *Loader) LoadDir(ctx context.Context, dir string) (*schema.Document, err
 	return doc, nil
 }
 
-func (l *Loader) readServiceDir(dir, service string) ([]fileHint, error) {
+// collectFiles recursively gathers description files. The service hint
+// is the first path component under the input root; an explicit
+// "{service}@{version}.json" file name overrides it. The authoritative
+// service name is always the one declared inside the file; the hint is
+// only used for collision-free discovery.
+func (l *Loader) collectFiles(dir, service string) ([]fileHint, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return nil, sdkerrors.New(sdkerrors.KindInput, "cannot read service directory").
+		return nil, sdkerrors.New(sdkerrors.KindInput, "cannot read input subdirectory").
 			WithService(service).Wrap(err)
 	}
 	var out []fileHint
 	for _, e := range entries {
+		full := filepath.Join(dir, e.Name())
 		if e.IsDir() {
-			return nil, sdkerrors.New(sdkerrors.KindInput,
-				"unexpected nested directory; layout is <root>/<service>/<version>.json").
-				WithService(service).WithField(e.Name())
+			sub, err := l.collectFiles(full, service)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, sub...)
+			continue
 		}
 		if !l.accept(e.Name()) {
 			continue
@@ -129,7 +138,7 @@ func (l *Loader) readServiceDir(dir, service string) ([]fileHint, error) {
 		if i := strings.LastIndex(name, "@"); i >= 0 {
 			svc = name[:i]
 		}
-		out = append(out, fileHint{filepath.Join(dir, e.Name()), svc})
+		out = append(out, fileHint{full, svc})
 	}
 	return out, nil
 }

@@ -1,0 +1,87 @@
+{
+  "name": "billing",
+  "version": "v2.0.0",
+  "codec": "json",
+  "doc": "Billing service with optional memo and a new currency",
+  "types": [
+    {
+      "name": "Currency",
+      "doc": "Supported currencies (GBP added)",
+      "type": { "kind": "enum", "values": ["USD", "EUR", "GBP"] }
+    },
+    {
+      "name": "Money",
+      "type": {
+        "kind": "object",
+        "fields": [
+          { "name": "amount_minor", "type": { "kind": "integer" } },
+          { "name": "currency", "type": { "kind": "ref", "ref": "Currency" } },
+          { "name": "memo", "type": { "kind": "string" }, "optional": true }
+        ]
+      }
+    }
+  ],
+  "operations": [
+    {
+      "name": "create_invoice",
+      "doc": "Create an invoice",
+      "input": {
+        "kind": "object",
+        "fields": [
+          { "name": "customer_id", "type": { "kind": "string" } },
+          { "name": "total", "type": { "kind": "ref", "ref": "Money" } }
+        ]
+      },
+      "output": {
+        "kind": "object",
+        "fields": [
+          { "name": "invoice_id", "type": { "kind": "string" } },
+          {
+            "name": "status",
+            "type": { "kind": "enum", "values": ["open", "paid"] }
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_invoice",
+      "input": {
+        "kind": "object",
+        "fields": [
+          { "name": "invoice_id", "type": { "kind": "string" } }
+        ]
+      },
+      "output": {
+        "kind": "object",
+        "fields": [
+          { "name": "invoice_id", "type": { "kind": "string" } },
+          { "name": "total", "type": { "kind": "ref", "ref": "Money" } },
+          {
+            "name": "status",
+            "type": { "kind": "enum", "values": ["open", "paid"] }
+          }
+        ]
+      }
+    },
+    {
+      "name": "list_invoices",
+      "doc": "List invoices for a customer (added in v2)",
+      "input": {
+        "kind": "object",
+        "fields": [
+          { "name": "customer_id", "type": { "kind": "string" } },
+          { "name": "limit", "type": { "kind": "integer" }, "optional": true }
+        ]
+      },
+      "output": {
+        "kind": "object",
+        "fields": [
+          {
+            "name": "invoice_ids",
+            "type": { "kind": "array", "elem": { "kind": "string" } }
+          }
+        ]
+      }
+    }
+  ]
+}

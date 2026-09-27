@@ -16,7 +16,7 @@ type tpl struct {
 	Module     string
 	Service    string
 	Version    string
-	VerNum     string // numeric version path component, e.g. "1_2_0"
+	Pkg        string // Go package name, e.g. "v1_0_0"
 	Codec      string
 	Doc        string
 	Types      []tplNamedType
@@ -30,7 +30,8 @@ type tplNamedType struct {
 }
 
 type tplOperation struct {
-	Name   string
+	Name   string // exported Go method name
+	Wire   string // operation name on the wire (as declared)
 	Doc    string
 	Input  string // Go type name of input
 	Output string // Go type name of output
@@ -46,6 +47,7 @@ func renderGoPackage(module string, iface *schema.Interface, metadata []byte, fi
 		Module:  module,
 		Service: iface.Name,
 		Version: iface.Version,
+		Pkg:     strings.ReplaceAll(iface.Version, ".", "_"),
 		Codec:   iface.Codec,
 		Doc:     iface.Doc,
 	}
@@ -77,7 +79,8 @@ func renderGoPackage(module string, iface *schema.Interface, metadata []byte, fi
 			return err.WithOp(op.Name).WithField("output")
 		}
 		vm.Operations = append(vm.Operations, tplOperation{
-			Name: exported(op.Name), Doc: op.Doc, Input: inName, Output: outName,
+			Name: exported(op.Name), Wire: op.Name, Doc: op.Doc,
+			Input: inName, Output: outName,
 		})
 	}
 
@@ -92,7 +95,7 @@ func renderGoPackage(module string, iface *schema.Interface, metadata []byte, fi
 		return sdkerrors.New(sdkerrors.KindGeneration, "cannot render types source").Wrap(err)
 	}
 
-	pkgDir := filepath.Join(goSDKDir, "sdk", iface.Name, iface.Version)
+	pkgDir := filepath.Join(goSDKDir, "sdk", iface.Name, vm.Pkg)
 	files[filepath.Join(pkgDir, iface.Name+".go")] = []byte(clientSrc)
 	files[filepath.Join(pkgDir, "types.go")] = []byte(typesSrc)
 	files[filepath.Join(pkgDir, "metadata.json")] = metadata

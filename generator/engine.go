@@ -49,7 +49,8 @@ func (g *Generator) plan(ctx context.Context, doc *schema.Document, hist *histor
 		})
 		sp := &servicePlan{name: name, bundles: bundles}
 
-		// Duplicate raw version strings inside one service.
+		// Duplicate version strings inside one service. The loader
+		// normalizes versions, so equality here is on canonical form.
 		for i := 1; i < len(bundles); i++ {
 			if bundles[i].Interface.Version == bundles[i-1].Interface.Version {
 				return nil, sdkerrors.New(sdkerrors.KindInput,
@@ -57,6 +58,29 @@ func (g *Generator) plan(ctx context.Context, doc *schema.Document, hist *histor
 					WithService(name).WithVersion(bundles[i].Interface.Version).
 					Wrap(fmt.Errorf("sources: %s, %s",
 						bundles[i-1].Source, bundles[i].Source))
+			}
+		}
+
+		// Reject attempts to redefine an already accepted version: the
+		// shape of a published version is immutable. Re-generating the
+		// identical document is the idempotent fast path handled before
+		// planning, so reaching here means the content actually differs.
+		for _, bun := range bundles {
+			key := historyKey(bun.Interface.Name, bun.Interface.Version)
+			if prior, ok := hist.Accepted[key]; ok {
+				rep, err := compat.Compare(fromHistory(prior), bun.Interface)
+				if err != nil {
+					return nil, sdkerrors.New(sdkerrors.KindGeneration,
+						"history comparison failed").Wrap(err)
+				}
+				if len(rep.Changes) != 0 {
+					return nil, sdkerrors.Newf(sdkerrors.KindVersion,
+						"version %s of service %s was already accepted with a "+
+							"different shape; published versions are immutable, "+
+							"bump the version instead (%d change(s))",
+						bun.Interface.Version, name, len(rep.Changes)).
+						WithService(name).WithVersion(bun.Interface.Version)
+				}
 			}
 		}
 

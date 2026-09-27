@@ -240,3 +240,33 @@ func TestEmptyDirectory(t *testing.T) {
 		t.Fatalf("expected KindInput for empty dir, got %v", err)
 	}
 }
+
+func TestUnknownCodecRejectedWhenRegistryProvided(t *testing.T) {
+	content := `{"name":"svc","version":"v1","codec":"msgpack",
+	  "operations":[{"name":"p","input":{"kind":"string"},"output":{"kind":"string"}}]}`
+	dir := t.TempDir()
+	writeFile(t, dir, "svc/v1.json", content)
+	l := New(Options{KnownCodecs: map[string]bool{"json": true}})
+	_, err := l.LoadDir(context.Background(), dir)
+	se := sdkerrors.AsError(err)
+	if se == nil || se.Kind != sdkerrors.KindInput {
+		t.Fatalf("unknown codec must be KindInput, got %v", err)
+	}
+	if se.Field != "codec" {
+		t.Fatalf("error must point at field codec, got %q", se.Field)
+	}
+	t.Logf("unknown codec rejected interface=%s version=%s: %v",
+		se.Service, se.Version, err)
+}
+
+func TestUnknownCodecAllowedWhenNoRegistry(t *testing.T) {
+	// Backwards-compatible: without a registry wired in, codec names are
+	// only syntax-checked.
+	content := `{"name":"svc","version":"v1","codec":"msgpack",
+	  "operations":[{"name":"p","input":{"kind":"string"},"output":{"kind":"string"}}]}`
+	dir := t.TempDir()
+	writeFile(t, dir, "svc/v1.json", content)
+	if _, err := New(Options{}).LoadDir(context.Background(), dir); err != nil {
+		t.Fatalf("expected load without registry to succeed, got %v", err)
+	}
+}

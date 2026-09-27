@@ -14,7 +14,7 @@ var identRe = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 // convertAndValidate converts the DTO to the canonical model and runs
 // every structural check. Nothing invalid is silently accepted.
-func convertAndValidate(d *fileDTO, source string) (*schema.Interface, error) {
+func convertAndValidate(d *fileDTO, source string, knownCodecs map[string]bool) (*schema.Interface, error) {
 	svc := strings.TrimSpace(d.Name)
 	if svc == "" {
 		return nil, sdkerrors.New(sdkerrors.KindInput, "missing interface name").
@@ -40,6 +40,13 @@ func convertAndValidate(d *fileDTO, source string) (*schema.Interface, error) {
 	if !identRe.MatchString(codec) {
 		return nil, sdkerrors.New(sdkerrors.KindInput,
 			"invalid codec name: must match [A-Za-z_][A-Za-z0-9_]*").
+			WithService(svc).WithVersion(ver.String()).WithField("codec").
+			Wrap(fmt.Errorf("source=%s", source))
+	}
+	if knownCodecs != nil && !knownCodecs[codec] {
+		return nil, sdkerrors.Newf(sdkerrors.KindInput,
+			"interface references unregistered codec %q; register it before generation",
+			codec).
 			WithService(svc).WithVersion(ver.String()).WithField("codec").
 			Wrap(fmt.Errorf("source=%s", source))
 	}

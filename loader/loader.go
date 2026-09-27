@@ -31,6 +31,10 @@ import (
 type Options struct {
 	// Extensions are accepted file extensions (default ".json").
 	Extensions []string
+	// KnownCodecs, when non-nil, is the set of codec names accepted in
+	// interface descriptions. A nil set skips codec validation (used when
+	// the caller does not wire a serde registry through the loader).
+	KnownCodecs map[string]bool
 }
 
 // Loader loads interface descriptions from the local filesystem.
@@ -175,9 +179,14 @@ func (l *Loader) LoadFile(ctx context.Context, path string) (*schema.Bundle, err
 			Wrap(fmt.Errorf("source=%s", path))
 	}
 
-	iface, err := convertAndValidate(&dto, path)
+	iface, err := convertAndValidate(&dto, path, l.opts.KnownCodecs)
 	if err != nil {
 		return nil, err
 	}
 	return &schema.Bundle{Interface: iface, Source: path}, nil
+}
+
+// Extensions returns the accepted file extensions.
+func (l *Loader) Extensions() []string {
+	return append([]string(nil), l.opts.Extensions...)
 }

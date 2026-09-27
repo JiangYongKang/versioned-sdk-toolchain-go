@@ -252,3 +252,46 @@ func indexOf(s, sub string) int {
 	}
 	return -1
 }
+
+// TestPublishedVersionImmutable ensures re-submitting the same version
+// with a different shape is a KindVersion error, not a silent overwrite.
+func TestPublishedVersionImmutable(t *testing.T) {
+	out := t.TempDir()
+	ctx := context.Background()
+	g := newTestGenerator(t, out)
+
+	dir1 := t.TempDir()
+	writeSchema(t, filepath.Join(dir1, "svc", "v1.json"), map[string]any{
+		"name": "svc", "version": "v1.0.0",
+		"operations": []any{
+			map[string]any{
+				"name":   "get",
+				"input":  objectType(fieldSpec("id", "string", false)),
+				"output": objectType(fieldSpec("name", "string", false)),
+			},
+		},
+	})
+	if _, err := g.Generate(ctx, dir1); err != nil {
+		t.Fatal(err)
+	}
+
+	// Same version, different source dir, extra field -> must be refused.
+	dir2 := t.TempDir()
+	writeSchema(t, filepath.Join(dir2, "svc", "v1.json"), map[string]any{
+		"name": "svc", "version": "v1.0.0",
+		"operations": []any{
+			map[string]any{
+				"name":   "get",
+				"input":  objectType(fieldSpec("id", "string", false)),
+				"output": objectType(fieldSpec("name", "string", false), fieldSpec("age", "integer", true)),
+			},
+		},
+	})
+	_, err := g.Generate(ctx, dir2)
+	se := sdkerrors.AsError(err)
+	if se == nil || se.Kind != sdkerrors.KindVersion {
+		t.Fatalf("redefining a published version must be KindVersion, got %v", err)
+	}
+	t.Logf("immutable published version protected: interface=%s version=%s => %s",
+		se.Service, se.Version, se.Reason)
+}

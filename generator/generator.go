@@ -65,7 +65,13 @@ func New(cfg Config) *Generator {
 // Generate loads schemas from inputDir, validates them, gates on
 // cross-version compatibility and atomically publishes a new SDK.
 func (g *Generator) Generate(ctx context.Context, inputDir string) (*Result, error) {
-	doc, err := g.cfg.Loader.LoadDir(ctx, inputDir)
+	// Re-derive the loader so codec validation always reflects the
+	// configured registry, even when the caller supplied a loader.
+	l := loader.New(loader.Options{
+		Extensions:  g.cfg.Loader.Extensions(),
+		KnownCodecs: g.knownCodecs(),
+	})
+	doc, err := l.LoadDir(ctx, inputDir)
 	if err != nil {
 		return nil, err
 	}

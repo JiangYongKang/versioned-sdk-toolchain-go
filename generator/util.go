@@ -18,3 +18,11 @@ func sortBundles(b []*schema.Bundle) {
 		return vi.Compare(vj) < 0
 	})
 }
+
+func (g *Generator) knownCodecs() map[string]bool {
+	m := map[string]bool{}
+	for _, n := range g.cfg.Serde.Names() {
+		m[n] = true
+	}
+	return m
+}

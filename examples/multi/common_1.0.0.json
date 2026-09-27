@@ -1,0 +1,17 @@
+{
+  "service": "shop",
+  "version": "1.0.0",
+  "enums": [
+    {"name": "Currency", "values": ["USD", "EUR", "CNY"]}
+  ],
+  "structs": [
+    {
+      "name": "Money",
+      "fields": [
+        {"name": "amount", "type": {"primitive": "double"}},
+        {"name": "currency", "type": {"ref": "Currency"}}
+      ]
+    }
+  ],
+  "interfaces": []
+}

@@ -1,0 +1,9 @@
+{
+  "service": "cyc",
+  "version": "1.0.0",
+  "structs": [
+    {"name": "A", "fields": [{"name": "b", "type": {"ref": "B"}}]},
+    {"name": "B", "fields": [{"name": "a", "type": {"ref": "A"}}]}
+  ],
+  "interfaces": []
+}

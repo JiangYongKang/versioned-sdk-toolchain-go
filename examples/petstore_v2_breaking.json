@@ -1,0 +1,34 @@
+{
+  "service": "petstore",
+  "version": "2.0.0",
+  "enums": [
+    {"name": "PetKind", "values": ["dog", "cat"]}
+  ],
+  "structs": [
+    {
+      "name": "Address",
+      "fields": [
+        {"name": "street", "type": {"primitive": "int"}}
+      ]
+    },
+    {
+      "name": "Pet",
+      "fields": [
+        {"name": "id", "type": {"primitive": "string"}},
+        {"name": "kind", "type": {"ref": "PetKind"}},
+        {"name": "address", "type": {"ref": "Address"}},
+        {"name": "nickname", "type": {"primitive": "string"}}
+      ]
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "GetPet",
+      "method": "GET /pets/{id}",
+      "input": [
+        {"name": "id", "type": {"primitive": "string"}}
+      ],
+      "output": {"ref": "Address"}
+    }
+  ]
+}

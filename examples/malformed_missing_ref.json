@@ -1,0 +1,12 @@
+{
+  "service": "petstore",
+  "version": "1.0.0",
+  "structs": [
+    {"name": "Pet", "fields": [
+      {"name": "owner", "type": {"ref": "Ghost"}}
+    ]}
+  ],
+  "interfaces": [
+    {"name": "GetPet", "method": "GET", "input": [], "output": {"ref": "Pet"}}
+  ]
+}

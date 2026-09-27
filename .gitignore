@@ -1,0 +1,3 @@
+# Local generation output
+/build/
+*.out

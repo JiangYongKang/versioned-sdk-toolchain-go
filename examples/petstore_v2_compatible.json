@@ -1,0 +1,53 @@
+{
+  "service": "petstore",
+  "version": "1.1.0",
+  "enums": [
+    {"name": "PetKind", "values": ["dog", "cat", "bird", "fish"]}
+  ],
+  "structs": [
+    {
+      "name": "Address",
+      "fields": [
+        {"name": "street", "type": {"primitive": "string"}},
+        {"name": "city", "type": {"primitive": "string"}},
+        {"name": "zip", "type": {"primitive": "string"}, "optional": true}
+      ]
+    },
+    {
+      "name": "Pet",
+      "fields": [
+        {"name": "id", "type": {"primitive": "long"}},
+        {"name": "name", "type": {"primitive": "string"}},
+        {"name": "kind", "type": {"ref": "PetKind"}},
+        {"name": "address", "type": {"ref": "Address"}},
+        {"name": "tags", "type": {"array": {"primitive": "string"}}, "optional": true},
+        {"name": "weight", "type": {"primitive": "double"}, "optional": true}
+      ]
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "GetPet",
+      "method": "GET /pets/{id}",
+      "input": [
+        {"name": "id", "type": {"primitive": "long"} }
+      ],
+      "output": {"ref": "Pet"},
+      "errors": [{"ref": "Address"}]
+    },
+    {
+      "name": "ListPets",
+      "method": "GET /pets",
+      "input": [
+        {"name": "limit", "type": {"primitive": "int"}, "optional": true},
+        {"name": "kind", "type": {"ref": "PetKind"}, "optional": true}
+      ],
+      "output": {"array": {"ref": "Pet"}}
+    },
+    {
+      "name": "DeletePet",
+      "method": "DELETE /pets/{id}",
+      "input": [{"name": "id", "type": {"primitive": "long"}}]
+    }
+  ]
+}

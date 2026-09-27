@@ -1,0 +1,28 @@
+{
+  "service": "shop",
+  "version": "1.0.0",
+  "structs": [
+    {
+      "name": "Order",
+      "fields": [
+        {"name": "id", "type": {"primitive": "long"}},
+        {"name": "total", "type": {"ref": "Money"}},
+        {"name": "items", "type": {"array": {"primitive": "string"}}}
+      ]
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "GetOrder",
+      "method": "GET /orders/{id}",
+      "input": [{"name": "id", "type": {"primitive": "long"}}],
+      "output": {"ref": "Order"}
+    },
+    {
+      "name": "CreateOrder",
+      "method": "POST /orders",
+      "input": [{"name": "items", "type": {"array": {"primitive": "string"}}}],
+      "output": {"ref": "Order"}
+    }
+  ]
+}
